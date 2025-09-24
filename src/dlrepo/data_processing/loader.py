@@ -5,6 +5,13 @@ from torchvision import datasets, transforms
 
 def build_transforms(dataset_name: str):
     if dataset_name.lower() == "cifar10":
+    if dataset_name.lower() == "mnist":
+        return transforms.Compose([
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+
         return transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465),

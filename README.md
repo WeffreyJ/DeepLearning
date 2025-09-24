@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# DeepLearning
-Everything Deep Learning. Documentation and breakdowns
-=======
 # Your DL Repo
 
 A production-ready, config-driven PyTorch workspace that covers core deep learning areas:
@@ -50,4 +46,10 @@ your-dl-repo/
 - Config-first: edit `configs/*.yaml` to control experiments.
 - Installable package: `pip install -e .` enables `from dlrepo...` imports anywhere.
 - CI: GitHub Actions runs `pytest` on push/PR.
->>>>>>> 0490e38 (feat: Initial project structure and baseline code)
+
+
+## Foundational Example: MLP on MNIST
+Train a tiny MLP on MNIST to validate the pipeline:
+```bash
+python train.py --config configs/mlp_mnist.yaml
+```

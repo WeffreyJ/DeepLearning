@@ -2,6 +2,7 @@ import argparse, yaml, torch, torch.nn as nn, torch.optim as optim, os
 from src.dlrepo.data_processing.loader import get_dataloaders
 from src.dlrepo.models.cnn import SimpleCNN, resnet18
 from src.dlrepo.models.transformer import TinyTransformerClassifier
+from src.dlrepo.models.mlp import MLP_MNIST
 from src.dlrepo.training.trainer import Trainer
 
 def build_model(cfg):
@@ -10,6 +11,9 @@ def build_model(cfg):
         return resnet18(num_classes=cfg["model"].get("num_classes", 10), pretrained=False)
     if name == "simplecnn":
         return SimpleCNN(num_classes=cfg["model"].get("num_classes", 10))
+    if name == "mlp_mnist":
+        mcfg = cfg["model"]
+        return MLP_MNIST(hidden=mcfg.get("hidden", 256), num_classes=mcfg.get("num_classes", 10))
     if name in ("tiny_transformer", "transformer"):
         mcfg = cfg["model"]
         return TinyTransformerClassifier(
