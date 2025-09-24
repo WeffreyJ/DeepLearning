@@ -17,3 +17,8 @@ training:
   device: auto
 output:
   dir: saved_models/mlp_mnist
+data:
+  root: data/raw
+training:
+  seed: 42
+  pin_memory: true

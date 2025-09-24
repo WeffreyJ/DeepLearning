@@ -27,14 +27,31 @@ def build_model(cfg):
 
 def build_optimizer(cfg, model):
     ocfg = cfg.get("optimizer", {})
-    name = ocfg.get("name", "adam").lower()
-    lr = ocfg.get("lr", 1e-3)
-    wd = ocfg.get("weight_decay", 0.0)
+    name = str(ocfg.get("name", "adam")).lower()
+    lr = float(ocfg.get("lr", 1e-3))
+    wd = float(ocfg.get("weight_decay", 0.0))
     if name == "adam":
         return optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
     if name == "sgd":
-        return optim.SGD(model.parameters(), lr=lr, weight_decay=wd, momentum=0.9)
+        momentum = float(ocfg.get("momentum", 0.9))
+        return optim.SGD(model.parameters(), lr=lr, weight_decay=wd, momentum=momentum)
     raise ValueError(f"Unknown optimizer: {name}")
+
+def build_scheduler(cfg, optimizer):
+    scfg = cfg.get("scheduler", {})
+    name = scfg.get("name", None)
+    if not name:
+        return None
+    name = name.lower()
+    if name == "step_lr":
+        return optim.lr_scheduler.StepLR(optimizer, step_size=int(scfg.get("step_size", 1)), gamma=float(scfg.get("gamma", 0.9)))
+    if name == "multistep_lr":
+        milestones = scfg.get("milestones", [5,10])
+        return optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=float(scfg.get("gamma", 0.1)))
+    if name == "cosine":
+        T_max = int(scfg.get("t_max", 10))
+        return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max)
+    return None
 
 def main():
     ap = argparse.ArgumentParser()
@@ -44,19 +61,28 @@ def main():
     with open(args.config, "r") as f:
         cfg = yaml.safe_load(f)
 
-    # Only CIFAR10 loader wired right now
     if cfg.get("task", "") == "vision_classification":
         train_loader, val_loader = get_dataloaders(cfg)
         model = build_model(cfg)
         optimizer = build_optimizer(cfg, model)
+        scheduler = build_scheduler(cfg, optimizer)
         loss_fn = nn.CrossEntropyLoss()
         out_dir = cfg.get("output", {}).get("dir", "saved_models")
         os.makedirs(out_dir, exist_ok=True)
-        trainer = Trainer(model, optimizer, loss_fn, device=cfg.get("training", {}).get("device", "auto"), ckpt_dir=out_dir)
+        csv_log = cfg.get("output", {}).get("csv_log", None)
+        patience = cfg.get("training", {}).get("early_stopping_patience", None)
+        trainer = Trainer(
+            model, optimizer, loss_fn,
+            device=cfg.get("training", {}).get("device", "auto"),
+            ckpt_dir=out_dir,
+            scheduler=scheduler,
+            csv_log_path=csv_log,
+            early_stopping_patience=patience
+        )
         best = trainer.fit(cfg["training"]["epochs"], train_loader, val_loader, ckpt_name="best.pth")
         print(f"Best val acc: {best:.4f}")
     else:
-        raise SystemExit("This starter wires up CIFAR10 vision training. Extend loader.py for NLP or other tasks.")
+        raise SystemExit("This starter wires up CIFAR10 & MNIST vision training. Extend loader.py for NLP or other tasks.")
 
 if __name__ == "__main__":
     main()
