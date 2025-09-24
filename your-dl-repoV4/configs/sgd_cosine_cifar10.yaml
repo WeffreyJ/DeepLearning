@@ -1,0 +1,43 @@
+task: vision_classification
+dataset: cifar10
+data:
+  root: data/raw
+
+model:
+  name: resnet18
+  num_classes: 10
+
+optimizer:
+  name: sgd
+  lr: 0.1
+  weight_decay: 5e-4
+  momentum: 0.9
+
+scheduler:
+  name: cosine
+  t_max: 30
+
+training:
+  epochs: 30
+  batch_size: 128
+  num_workers: 2
+  val_split: 0.1
+  seed: 42
+  device: auto
+  pin_memory: true
+  early_stopping_patience: null
+  label_smoothing: 0.1
+  mixup_alpha: 0.2
+
+augment:
+  cifar10_train:
+    random_crop: 32
+    padding: 4
+    random_horizontal_flip: true
+    randaugment:
+      n: 2
+      m: 9
+
+output:
+  dir: saved_models/resnet18_cifar10_sgdcos
+  csv_log: saved_models/resnet18_cifar10_sgdcos/train_log.csv
