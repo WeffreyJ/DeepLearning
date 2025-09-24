@@ -29,3 +29,6 @@ wandb/
 
 # Ignore stray update folders
 your-dl-repo*/
+
+# Ignore stray update folders
+your-dl-repo*/
