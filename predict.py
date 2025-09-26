@@ -1,7 +1,7 @@
 import argparse, torch
 from PIL import Image
 from torchvision import transforms
-from src.dlrepo.models.cnn import resnet18
+from dlrepo.models.cnn import resnet18
 
 def main():
     ap = argparse.ArgumentParser()

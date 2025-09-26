@@ -1,6 +1,6 @@
 import argparse, torch, yaml
 from torchvision import datasets, transforms
-from src.dlrepo.models.cnn import resnet18
+from dlrepo.models.cnn import resnet18
 
 def main():
     ap = argparse.ArgumentParser()

@@ -1,9 +1,9 @@
 import argparse, yaml, torch, torch.nn as nn, torch.optim as optim, os
-from src.dlrepo.data_processing.loader import get_dataloaders
-from src.dlrepo.models.cnn import SimpleCNN, resnet18
-from src.dlrepo.models.transformer import TinyTransformerClassifier
-from src.dlrepo.models.mlp import MLP_MNIST
-from src.dlrepo.training.trainer import Trainer
+from dlrepo.data_processing.loader import get_dataloaders
+from dlrepo.models.cnn import SimpleCNN, resnet18
+from dlrepo.models.transformer import TinyTransformerClassifier
+from dlrepo.models.mlp import MLP_MNIST
+from dlrepo.training.trainer import Trainer
 
 def build_model(cfg):
     name = cfg.get("model", {}).get("name", "resnet18").lower()

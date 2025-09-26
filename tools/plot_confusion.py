@@ -1,7 +1,7 @@
 import argparse, torch, yaml, itertools, matplotlib.pyplot as plt, numpy as np
 from sklearn.metrics import confusion_matrix
 from torchvision import datasets, transforms
-from src.dlrepo.models.cnn import resnet18
+from dlrepo.models.cnn import resnet18
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True); ap.add_argument("--checkpoint", required=True)
