@@ -6,4 +6,5 @@ tqdm
 PyYAML
 matplotlib
 scikit-learn
+pandas
 pytest
