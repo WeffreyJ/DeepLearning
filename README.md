@@ -1,4 +1,4 @@
-# Your DL Repo
+# MY (SOON TO BE YOUR) DL Repo
 
 A production-ready, config-driven PyTorch workspace that covers core deep learning areas:
 Foundations, Computer Vision, NLP, Generative AI, RL, GNNs, and SSL.
