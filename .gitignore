@@ -26,3 +26,7 @@ wandb/
 
 # VSCode
 .vscode/
+
+# Ignore stray update folders
+your-dl-repo*/
+ydl-sync/
