@@ -16,3 +16,5 @@ opencv-python
 imageio[ffmpeg]
 
 timm
+
+yt-dlp
