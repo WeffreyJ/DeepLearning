@@ -37,3 +37,6 @@ ydl-sync/
 
 # local editor/patch backups
 *.bak.*
+
+# demo outputs
+outputs/
