@@ -1,19 +1,22 @@
 import argparse, yaml, torch, torch.nn as nn, torch.optim as optim, os
 from dlrepo.data_processing.loader import get_dataloaders
-from dlrepo.models.cnn import SimpleCNN, resnet18
+from dlrepo.models.cnn import SimpleCNN, resnet18, resnet34, resnet50
 from dlrepo.models.transformer import TinyTransformerClassifier
 from dlrepo.models.mlp import MLP_MNIST
 from dlrepo.training.trainer import Trainer
 
 def build_model(cfg):
     name = cfg.get("model", {}).get("name", "resnet18").lower()
+    num_classes = cfg.get("model", {}).get("num_classes", 10)
+
     if name == "resnet18":
-        return resnet18(num_classes=cfg["model"].get("num_classes", 10), pretrained=False)
+        return resnet18(num_classes=num_classes, pretrained=False)
+    if name == "resnet34":
+        return resnet34(num_classes=num_classes, pretrained=False)
+    if name == "resnet50":
+        return resnet50(num_classes=num_classes, pretrained=False)
     if name == "simplecnn":
-        return SimpleCNN(num_classes=cfg["model"].get("num_classes", 10))
-    if name == "mlp_mnist":
-        mcfg = cfg["model"]
-        return MLP_MNIST(hidden=mcfg.get("hidden", 256), num_classes=mcfg.get("num_classes", 10))
+        return SimpleCNN(num_classes=num_classes)
     if name in ("tiny_transformer", "transformer"):
         mcfg = cfg["model"]
         return TinyTransformerClassifier(
@@ -21,8 +24,12 @@ def build_model(cfg):
             d_model=mcfg.get("d_model", 128),
             nhead=mcfg.get("nhead", 4),
             num_layers=mcfg.get("num_layers", 2),
-            num_classes=mcfg.get("num_classes", 2),
+            num_classes=num_classes,
         )
+    if name == "mlp_mnist":
+        mcfg = cfg["model"]
+        return MLP_MNIST(hidden=mcfg.get("hidden", 256), num_classes=num_classes)
+
     raise ValueError(f"Unknown model: {name}")
 
 def build_optimizer(cfg, model):

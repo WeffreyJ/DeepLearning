@@ -46,3 +46,5 @@ your-dl-repo/
 - Config-first: edit `configs/*.yaml` to control experiments.
 - Installable package: `pip install -e .` enables `from dlrepo...` imports anywhere.
 - CI: GitHub Actions runs `pytest` on push/PR.
+
+<!-- 🐾 secret breadcrumb: revisit TensorBoard (images + scalars UX; add confusion matrix) -->

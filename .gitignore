@@ -34,3 +34,6 @@ ydl-sync/
 # Ignore stray update folders
 your-dl-repo*/
 ydl-sync/
+
+# local editor/patch backups
+*.bak.*

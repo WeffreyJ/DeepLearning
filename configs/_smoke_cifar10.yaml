@@ -1,0 +1,23 @@
+task: vision_classification
+dataset: cifar10
+data: { root: data/raw }
+
+model: { name: resnet18, num_classes: 10 }
+
+optimizer: { name: sgd, lr: 0.05, weight_decay: 5e-4, momentum: 0.9 }
+scheduler: { name: cosine, t_max: 6 }
+
+training:
+  epochs: 6
+  batch_size: 128
+  num_workers: 2
+  val_split: 0.1
+  seed: 42
+  device: auto
+  pin_memory: true
+  label_smoothing: 0.1
+  mixup_alpha: 0.0
+
+output:
+  dir: saved_models/smoke_tb
+  csv_log: saved_models/smoke_tb/train_log.csv
