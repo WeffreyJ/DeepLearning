@@ -14,3 +14,5 @@ tensorboard
 tensorboard
 opencv-python
 imageio[ffmpeg]
+
+timm
