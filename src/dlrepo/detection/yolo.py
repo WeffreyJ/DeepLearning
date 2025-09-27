@@ -19,7 +19,7 @@ class YOLODetector:
         conf: float = 0.25,
         iou: float = 0.45,
         max_det: int = 300,
-    ):
+        imgsz: object = None):
         if device == "auto":
             device = ("cuda" if torch.cuda.is_available() else
                       ("mps" if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available()
@@ -38,6 +38,7 @@ class YOLODetector:
         self.conf = float(conf)
         self.iou  = float(iou)
         self.max_det = int(max_det)
+        self.imgsz = imgsz
 
         # Class names (dict: id->name)
         self.names = self.model.model.names if hasattr(self.model, "model") else getattr(self.model, "names", {})
@@ -50,6 +51,18 @@ class YOLODetector:
         # Ultralytics expects RGB; it converts internally too, but we keep explicit & fast
         import cv2
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        h, w = rgb.shape[:2]
+        try:
+            stride = int(getattr(self.model.model, 'stride', 32).max() if hasattr(self.model.model, 'stride') else getattr(self.model, 'stride', 32))
+        except Exception:
+            stride = 32
+        def _ceil_to(v, m):
+            return int(((v + m - 1)//m)*m)
+        imgsz = getattr(self, 'imgsz', None)
+        if imgsz is None:
+            imgsz = [_ceil_to(h, stride), _ceil_to(w, stride)]
+        h, w = rgb.shape[:2]
+        imgsz = self.imgsz if self.imgsz is not None else [h, w]
 
         res = self.model.predict(
             source=rgb,
@@ -58,7 +71,7 @@ class YOLODetector:
             iou=self.iou,
             max_det=self.max_det,
             device=self.device,
-            imgsz=None,   # infer from input shape
+            imgsz=imgsz,   # infer from input shape
         )
         out = []
         if not res:
