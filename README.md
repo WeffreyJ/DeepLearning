@@ -48,3 +48,6 @@ your-dl-repo/
 - CI: GitHub Actions runs `pytest` on push/PR.
 
 <!-- 🐾 secret breadcrumb: revisit TensorBoard (images + scalars UX; add confusion matrix) -->
+
+- YOLO detect demo:
+  `python tools/detect_demo.py --source 0 --seconds 5 --stride 2 --max-size 640 --config configs/detect_yolo.yaml --output outputs/detect_cam_smoke.mp4`
