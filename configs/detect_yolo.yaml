@@ -1,0 +1,7 @@
+# configs/detect_yolo.yaml
+runtime:
+  device: auto             # auto | cuda | mps | cpu
+  conf_thr: 0.25
+  iou_thr: 0.45
+  max_det: 300
+  model: yolov8n           # ultralytics model name or path (yolov8n/yolov11n/...)

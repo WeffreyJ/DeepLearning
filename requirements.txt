@@ -18,3 +18,4 @@ imageio[ffmpeg]
 timm
 
 yt-dlp
+ultralytics
