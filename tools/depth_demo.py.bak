@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+import argparse, os, sys, warnings
+import numpy as np, torch, cv2, imageio.v2 as iio
+from typing import Optional
+from dlrepo.models.depth.midas_small import MiDaSSmall
+
+def resolve_youtube_direct(url: str) -> str:
+    # Try pytube, fall back to yt-dlp HLS
+    try:
+        from pytube import YouTube
+        yt = YouTube(url)
+        stream = (yt.streams
+                    .filter(progressive=True, file_extension="mp4")
+                    .order_by("resolution")
+                    .desc()
+                    .first())
+        if stream and stream.url:
+            return stream.url
+    except Exception as e:
+        print(f"pytube failed: {e}", file=sys.stderr)
+    try:
+        from yt_dlp import YoutubeDL
+        ydl_opts = {
+            "format": "bv*[height<=720]+ba/b[height<=720]/best",
+            "quiet": True,
+            "no_warnings": True,
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if "url" in info:
+                return info["url"]
+            # fallback to first format URL
+            fmts = info.get("formats") or []
+            for f in fmts:
+                if f.get("url"):
+                    return f["url"]
+    except Exception as e:
+        raise RuntimeError(f"yt-dlp failed: {e}")
+    raise RuntimeError("Failed to resolve a playable URL.")
+
+def open_source(source: str):
+    print(f"[INFO] Source opened: {source}")
+    reader = iio.get_reader(source, plugin="ffmpeg")
+    meta = reader.get_meta_data()
+    fps  = float(meta.get("fps", 30.0))
+    size = meta.get("source_size", None) or meta.get("size", None)
+    if size is None:
+        # read one frame to infer size
+        frame = reader.get_next_data()
+        h, w = frame.shape[:2]
+        size = (w, h)
+        reader.close()
+        reader = iio.get_reader(source, plugin="ffmpeg")
+    print(f"[INFO] FPS={fps:.2f}  Size={size[0]}x{size[1]}")
+    return reader, fps, size
+
+def downscale_keep_aspect(img, max_side: Optional[int]):
+    if not max_side:
+        return img
+    h, w = img.shape[:2]
+    m = max(h, w)
+    if m <= max_side:
+        return img
+    scale = max_side / float(m)
+    nh, nw = int(round(h*scale)), int(round(w*scale))
+    return cv2.resize(img, (nw, nh), interpolation=cv2.INTER_AREA)
+
+def hstack_safe(left, right):
+    # pad shorter height to stack side-by-side
+    lh, lw = left.shape[:2]
+    rh, rw = right.shape[:2]
+    H = max(lh, rh)
+    def pad(img):
+        h, w = img.shape[:2]
+        if h == H: return img
+        pad = np.zeros((H-h, w, 3), dtype=img.dtype)
+        return np.vstack([img, pad])
+    return np.hstack([pad(left), pad(right)])
+
+def main():
+    ap = argparse.ArgumentParser()
+    g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument("--source",  type=str, help="OpenCV/ffmpeg source (e.g., 0 for webcam or path)")
+    g.add_argument("--youtube", type=str, help="YouTube URL")
+    ap.add_argument("--config",  type=str, default="configs/depth_midas_infer.yaml")
+    ap.add_argument("--seconds", type=int, default=20, help="Limit duration (approx)")
+    ap.add_argument("--stride",  type=int, default=1,  help="Process every Nth frame")
+    ap.add_argument("--max-size",type=int, default=None, help="Max side length (downscale before inference)")
+    ap.add_argument("--output",  type=str, default="outputs/depth_demo.mp4")
+    ap.add_argument("--no-save", action="store_true", help="Disable writing output video")
+    ap.add_argument("--preview", action="store_true", help="OpenCV preview window")
+    ap.add_argument("--device",  type=str, default="auto")
+    args = ap.parse_args()
+
+    os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
+
+    # Resolve input
+    if args.youtube:
+        print("Resolving YouTube stream…")
+        stream_url = resolve_youtube_direct(args.youtube)
+        source = stream_url
+    else:
+        source = args.source
+
+    # Open reader (ffmpeg via imageio)
+    reader, fps, size = open_source(source)
+
+    # Build model
+    m = MiDaSSmall(device=args.device)
+    print(f"[INFO] MiDaS-small on device: {m.device.type}")
+
+    writer = None
+    frames_written = 0
+    frame_idx = 0
+    max_frames = int(fps * args.seconds) if args.seconds else None
+
+    try:
+        for frame in reader:
+            frame_idx += 1
+            if args.stride > 1 and (frame_idx % args.stride != 0):
+                continue
+            if max_frames and frames_written >= max_frames:
+                break
+
+            bgr = frame
+            # optional downscale for speed
+            bgr_small = downscale_keep_aspect(bgr, args.max_size)
+
+            # depth & colorize
+            d = m.infer(bgr_small)
+            from dlrepo.perception.utils import colorize_depth
+            col = colorize_depth(d)  # BGR
+
+            # match side-by-side sizes
+            vis = hstack_safe(bgr_small, col)
+
+            # init writer after we know final vis size
+            if writer is None and not args.no_save:
+                h, w = vis.shape[:2]
+                # macroblock-friendly height
+                if h % 16 != 0:
+                    pad_h = 16 - (h % 16)
+                    vis = np.vstack([vis, np.zeros((pad_h, w, 3), vis.dtype)])
+                    h += pad_h
+                writer = iio.get_writer(args.output, fps=fps, codec="h264", quality=7)
+                print(f"[INFO] Writing: {args.output}")
+
+            if args.preview:
+                cv2.imshow("depth_demo", vis)
+                if cv2.waitKey(1) & 0xFF == 27:
+                    break
+
+            if writer:
+                writer.append_data(cv2.cvtColor(vis, cv2.COLOR_BGR2RGB))
+                frames_written += 1
+
+    finally:
+        reader.close()
+        if writer:
+            writer.close()
+        if args.preview:
+            cv2.destroyAllWindows()
+
+    print(f"[DONE] Wrote {frames_written} frames." if writer else "[DONE] Preview only (no-save).")
+
+if __name__ == "__main__":
+    # silence some noisy deprecations
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    main()
