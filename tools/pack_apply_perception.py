@@ -10,9 +10,9 @@ def sh(cmd, check=True, cwd=REPO):
     return subprocess.run(cmd, shell=True, check=check, cwd=cwd)
 
 def py_compile(paths):
-    joined = " ".join(paths)
-    if joined:
-        sh(f"{PYBIN} -m py_compile {joined}")
+    py_files = [p for p in paths if p.endswith(".py")]
+    if py_files:
+        sh(f"{PYBIN} -m py_compile {' '.join(py_files)}")
 
 def git_commit(message):
     try:
