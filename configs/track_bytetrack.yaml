@@ -1,0 +1,4 @@
+runtime: { device: auto }
+detector: { conf_th: 0.4 }
+tracker: { conf_th: 0.4, match_th: 0.7, max_age: 30 }
+output: { dir: outputs/tracks }

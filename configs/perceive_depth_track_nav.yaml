@@ -1,0 +1,20 @@
+runtime:
+  device: auto
+  out_dir: outputs/perceive
+
+depth:
+  backend: torchhub
+  model: midas_small
+
+detector:
+  backend: torchvision
+  conf_th: 0.4
+
+tracker:
+  name: bytetrack_lite
+  conf_th: 0.4
+  match_th: 0.7
+  max_age: 30
+
+nav:
+  near_th: 0.3

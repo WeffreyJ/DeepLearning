@@ -1,0 +1,2 @@
+runtime: { device: auto }
+detector: { conf_th: 0.4 }

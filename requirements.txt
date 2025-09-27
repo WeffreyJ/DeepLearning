@@ -12,3 +12,5 @@ pytest
 tensorboard
 
 tensorboard
+opencv-python
+imageio[ffmpeg]
